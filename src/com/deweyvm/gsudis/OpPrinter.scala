@@ -18,10 +18,3 @@ class Printer(v:Vector[String=>String]) extends OpPrinter {
   def print(parsed:ParsedOp):String = parsed.op + " " + parsed.args.zip(v).map {case (p, f) => f(p)}.mkString(", ")
 }
 
-
-trait OpParser extends OpPrinter {
-  val reqState:AltState
-  val name:String
-  def process(state:AltState, input:Vector[Byte]):Option[(ParsedOp, AltState, Vector[Byte])]
-  override def toString = name
-}

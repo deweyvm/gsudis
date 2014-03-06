@@ -5,74 +5,6 @@ package com.deweyvm.gsudis
 
 
 case class ParsedOp(op:String, args:Vector[String])
-object HalfOp {
-  def fTrue(c:Char) = true
-}
-//half byte op, half byte arg
-class HalfOp(val op:String, code:Char, f:Char=>Boolean=HalfOp.fTrue, override val reqState:AltState=AltNone, newState:AltState= AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case Byte(c, x) +: rest if c == code && state >= reqState && f(x) =>
-      Some((ParsedOp(op, Vector(x.toString)), newState, rest))
-    case _ => None
-  }
-}
-
-//half byte opcode, half byte register, one byte arg
-class RegArgOp(val op:String, code:Char, override val reqState:AltState=AltNone, newState:AltState= AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case Byte(c, x) +: b1 +: rest if c == code && state >= reqState =>
-      Some((ParsedOp(op, Vector(x.toString, b1.toString)), newState, rest))
-    case _ => None
-  }
-}
-
-//half byte opcode, half byte register, one byte arg
-class RegArg2Op(val op:String, code:Char, override val reqState:AltState=AltNone, newState:AltState= AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case Byte(c, x) +: b1 +: b2 +: rest if c == code && state >= reqState =>
-      Some((ParsedOp(op, Vector(x.toString, b1.toString, b2.toString)), newState, rest))
-    case _ => None
-  }
-}
-
-//one byte opcode, no args
-class WordOp(val op:String, code:Byte, override val reqState:AltState=AltNone, newState:AltState=AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case b +: rest if b == code && state >= reqState =>
-      Some((ParsedOp(op, Vector()), newState, rest))
-    case _ => None
-  }
-}
-//one byte opcode, one byte arg
-class ArgOp(val op:String, code:Byte, override val reqState:AltState=AltNone, newState:AltState=AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case b1 +: b2 +: rest if code == b1 && state >= reqState =>
-      Some((ParsedOp(op, Vector(b2.toString)), newState, rest))
-    case _ => None
-  }
-}
-
-//move is a special case
-class MoveOp(val op:String, code1:Char, code2:Char, override val reqState:AltState=AltNone, newState:AltState=AltNone)(p:OpPrinter) extends OpParser {
-  override def print(parsed:ParsedOp) = p.print(parsed)
-  override val name:String = op
-  def process(state:AltState, input:Vector[Byte]) = input match {
-    case Byte(u1, l1) +: Byte(u2, l2) +: rest if code1 == u1 && code2 == u2 && state >= reqState =>
-      Some((ParsedOp(op, Vector(l1.toString, l2.toString)), newState, rest))
-    case _ => None
-  }
-}
-
 
 object Op {
   implicit class string2Byte(s:String) {
@@ -161,8 +93,8 @@ object Op {
     new HalfOp("sbc", '6', reqState=AltState1)(regPrinter),
     new WordOp("sbk", "90".b)(opPrinter),
     new WordOp("sex", "95".b)(opPrinter),
-    new RegArg2Op("sm", 'F', reqState=AltState2)(regAdr2Printer),//sm  4 reg imm2
-    new RegArgOp("sms", 'A', reqState=AltState2)(regAdrPrinter),//sms 4 reg imm
+    new RegArg2Op("sm", 'F', reqState=AltState2)(regAdr2Printer),
+    new RegArgOp("sms", 'A', reqState=AltState2)(regAdrPrinter),
     new HalfOp("stb", '3', _ <= 'B')(regPrinter),
     new WordOp("stop", "00".b)(opPrinter),
     new HalfOp("stw", '3', _ <= 'B')(regPrinter),
@@ -175,9 +107,9 @@ object Op {
     new HalfOp("with", '2')(regPrinter)
 
 
-  ).sortWith { case (o1, o2) =>
-       o1.reqState.value > o2.reqState.value
-  }
+  )/*.sortWith { case (o1, o2) =>
+     o1.reqState.value > o2.reqState.value
+  }*/
 }
 
 object Main {
@@ -203,7 +135,7 @@ object Main {
           }
         }
         if (rest.length == prevLength) {
-          throw new Exception("Failed to find a parser at " + rest)
+          throw new Exception("Failed to find a parser for bytes starting at " + rest)
         }
       }
     }
