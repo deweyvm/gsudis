@@ -1,7 +1,7 @@
 package com.deweyvm.gsudis
 
 trait OpPrinter {
-  def print(parsed:ParsedOp):String
+  def print(parsed:ParseResult):String
 }
 
 object OpPrinter {
@@ -15,6 +15,6 @@ object Printer {
 }
 class Printer(v:Vector[String=>String]) extends OpPrinter {
   def +(f:String=>String) = new Printer(v :+ f)
-  def print(parsed:ParsedOp):String = parsed.op + " " + parsed.args.zip(v).map {case (p, f) => f(p)}.mkString(", ")
+  def print(parsed:ParseResult):String = parsed.op + " " + parsed.args.zip(v).map {case (p, f) => f(p)}.mkString(",")
 }
 

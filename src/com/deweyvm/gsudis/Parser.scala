@@ -4,7 +4,7 @@ abstract class Parser(op:String,
                       val req:AltState,
                       val newState:AltState,
                       val printer:OpPrinter) extends OpPrinter with OpParser {
-  override def print(parsed:ParsedOp) = printer.print(parsed)
+  override def print(parsed:ParseResult) = printer.print(parsed)
   override val name:String = op
   override val reqState = req
   final def process(state:AltState, input:Vector[Byte]) = {
@@ -12,7 +12,7 @@ abstract class Parser(op:String,
       None
     } else {
       myProcess(input) flatMap {case (args, rest) =>
-        Some((ParsedOp(op, args), newState, rest))
+        Some((ParseResult(this, op, args), newState, rest))
       }
     }
   }
@@ -83,7 +83,7 @@ class MoveOp(op:String, code1:Char, code2:Char, reqState:AltState=AltNone, newSt
 trait OpParser {
   val reqState:AltState
   val name:String
-  def process(state:AltState, input:Vector[Byte]):Option[(ParsedOp, AltState, Vector[Byte])]
+  def process(state:AltState, input:Vector[Byte]):Option[(ParseResult, AltState, Vector[Byte])]
   override def toString = name
 }
 
