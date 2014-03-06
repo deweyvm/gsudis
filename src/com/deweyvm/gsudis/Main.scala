@@ -14,14 +14,18 @@ object Main {
     import Parsing._
     val in = new Scanner(System.in)
 
-    Test.runAll()
-    exit(0)
+    //Test.runAll()
+    //exit(0)
     while (true) {
       print("gsudis> ")
       val hex = in.nextLine().toUpperCase.split(" ").map{_.b}.toVector
-      parse(hex) match {
-        case Left(err) => System.err.println(err)
-        case Right(res) => res foreach (println(_))
+      try {
+        parse(hex) match {
+          case Left(err) => System.err.println(err)
+          case Right(res) => res foreach (println(_))
+        }
+      } catch {
+        case s:Exception => System.err.println(s)
       }
       //println(in.nextLine())
     }
