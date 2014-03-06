@@ -17,10 +17,16 @@ object Test {
     }
   }
 
-  def testReg(range:Range)(pre:String, exp:String) = {
+  def testReg(range:Range)(pre:String, exp:String, parens:Boolean=false) = {
     range foreach { i:Int =>
       val hex = "%X" format i
-      test(pre + hex, exp + " r" + i)
+      val expected = if(parens) {
+        exp + " (r" + i + ")"
+      } else {
+        exp + " r" + i
+      }
+
+      test(pre + hex, expected)
     }
   }
 
@@ -42,6 +48,17 @@ object Test {
     }
   }
 
+  def testLms(pre:String, exp:String) = {
+    (0 until 16) foreach { i:Int =>
+      (0 until 256) foreach { k:Int =>
+        val regHex = "%X" format i
+        val imm = "%02X" format k
+
+        test(pre + regHex + " " + imm, "%s r%d,(%s)" format (exp, i,imm) )
+      }
+    }
+  }
+
   def testRegAdr(regRange:Range)(immRange:Range)(pre:String, exp:String) = {
     regRange foreach { i:Int =>
       immRange foreach { k:Int =>
@@ -49,6 +66,17 @@ object Test {
         val imm = "%02X" format k
 
         test(pre + regHex + " " + imm, "%s r%d,$%s" format (exp, i,imm) )
+      }
+    }
+  }
+
+  def testSms(pre:String, exp:String) = {
+    (0 until 16) foreach { i:Int =>
+      (0 until 256) foreach { k:Int =>
+        val regHex = "%X" format i
+        val imm = "%02X" format k
+
+        test(pre + regHex + " " + imm, "%s (%s),r%d" format (exp, imm, i) )
       }
     }
   }
@@ -67,14 +95,19 @@ object Test {
     }
   }
 
-  def testRegAdr2(regRange:Range)(immRange:Range)(pre:String, exp:String) = {
+  def testRegAdr2(regRange:Range)(immRange:Range)(pre:String, exp:String, before:Boolean) = {
     regRange foreach { i:Int =>
       immRange foreach { k:Int =>
         immRange foreach { p:Int =>
           val regHex = "%X" format i
           val imm = "%02X" format k
           val imm2 = "%02X" format p
-          test(pre + regHex + " " + imm + " " + imm2, "%s r%d,$%s%s" format (exp, i,imm2, imm) )
+          val expected = if (before) {
+            "%s (%s%s),r%d" format (exp, imm2, imm, i)
+          } else {
+            "%s r%d,(%s%s)" format (exp, i, imm2, imm)
+          }
+          test(pre + regHex + " " + imm + " " + imm2, expected)
         }
 
       }
@@ -94,14 +127,14 @@ object Test {
 
   def testReg16Imm256 = testRegImm(0 until 16)(0 until 256) _
   def testReg16Adr256 = testRegAdr(0 until 16)(0 until 256) _
-  def testReg16 = testReg(0 until 16) _
+  def testReg16(pre:String, exp:String) = testReg(0 until 16)(pre, exp)
   def testImm16 = testImm(0 until 16) _
 
   def testBranch(op:String, name:String) {
     (0 until 255) foreach { k =>
       val hex = "%02X" format k
-      val output = "%02X" format k.toByte
-      test(op + " " + hex, name + " $" +output)
+      val output = k - 128
+      test(op + " " + hex, name + " " +output)
     }
   }
 
@@ -147,12 +180,12 @@ object Test {
     testReg(0 until 15)("D", "inc")
     testRegImm2(0 until 16)(0 until 256)("F", "iwt")
     testReg(8 to 13)("9", "jmp")
-    testReg(0 to 11)("3D 4", "ldb")
-    testReg(0 to 11)("4", "ldw")
+    testReg(0 to 11)("3D 4", "ldb", true)
+    testReg(0 to 11)("4", "ldw", true)
     testImm(1 to 4)("9", "link")
     testReg(8 to 13)("3D 9", "ljmp")
-    testRegAdr2(0 until 16)(0 until 256)("3D F", "lm")
-    testReg16Imm256("3D A", "lms")
+    testRegAdr2(0 until 16)(0 until 256)("3D F", "lm", false)
+    testLms("3D A", "lms")
     test("3D 9F", "lmult")
     test("9E", "lob")
     test("3C", "loop")
@@ -175,11 +208,12 @@ object Test {
     testReg16("3D 6", "sbc")
     test("90", "sbk")
     test("95", "sex")
-    //sm
-    //sms
-    testReg(0 to 11)("3D 3", "stb")
+
+    testRegAdr2(0 until 16)(0 until 256)("3E F", "sm", true)
+    testSms("3E A", "sms")
+    testReg(0 to 11)("3D 3", "stb", true)
     test("00", "stop")
-    testReg(0 to 11)("3", "stw")
+    testReg(0 to 11)("3", "stw", true)
     testReg16("6", "sub")
     testImm16("3E 6", "sub")
     test("4D", "swap")

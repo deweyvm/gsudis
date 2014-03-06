@@ -14,13 +14,21 @@ object Parsing {
   val regPrinter = Printer() + OpPrinter.reg
   val wordPrinter = Printer()
   val adrPrinter = Printer() + OpPrinter.adr
+  val ramPrinter = Printer() + (OpPrinter.paren _).compose(OpPrinter.reg)
+  val jumpPrinter = Printer() + {s => (Integer.parseInt(s, 16) - 128).toString }
+  val loadPrinter = Printer() + OpPrinter.reg + OpPrinter.paren
+  val load2Printer = new OpPrinter {
+    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.paren(parsed.args(2) + parsed.args(1))
+  }
   val regImmPrinter = Printer() + OpPrinter.reg + OpPrinter.imm
   val regImm2Printer = new OpPrinter {
     override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.imm(parsed.args(2) + parsed.args(1))
   }
-  val regAdrPrinter = Printer() + OpPrinter.reg + OpPrinter.adr
-  val regAdr2Printer = new OpPrinter {
-    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.adr(parsed.args(2) + parsed.args(1))
+  val smsPrinter = new OpPrinter {
+    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.paren(parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
+  }
+  val smPrinter = new OpPrinter {
+    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.paren(parsed.args(2) + parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
   }
   val movePrinter = Printer() + OpPrinter.reg + OpPrinter.reg
   val All:Vector[OpParser with OpPrinter] = Vector(
@@ -34,19 +42,19 @@ object Parsing {
     new HalfOp("and", '7', _ >= '1')(regPrinter),
     new HalfOp("and",'7', _ >= '1', reqState=AltState2)(immPrinter),
     new WordOp("asr", "96".b)(wordPrinter),
-    new ArgOp("bcc", "0C".b)(adrPrinter),
-    new ArgOp("bcs", "0D".b)(adrPrinter),
-    new ArgOp("beq", "09".b)(adrPrinter),
-    new ArgOp("bge", "07".b)(adrPrinter),
+    new ArgOp("bcc", "0C".b)(jumpPrinter),
+    new ArgOp("bcs", "0D".b)(jumpPrinter),
+    new ArgOp("beq", "09".b)(jumpPrinter),
+    new ArgOp("bge", "07".b)(jumpPrinter),
     new HalfOp("bic", '7', _ >= '1', reqState=AltState1)(regPrinter),
     new HalfOp("bic",'7', _ >= '1', reqState=AltState3)(immPrinter),
-    new ArgOp("blt", "06".b)(adrPrinter),
-    new ArgOp("bmi", "0B".b)(adrPrinter),
-    new ArgOp("bne", "08".b)(adrPrinter),
-    new ArgOp("bpl", "0A".b)(adrPrinter),
-    new ArgOp("bra", "05".b)(adrPrinter),
-    new ArgOp("bvc", "0E".b)(adrPrinter),
-    new ArgOp("bvs", "0F".b)(adrPrinter),
+    new ArgOp("blt", "06".b)(jumpPrinter),
+    new ArgOp("bmi", "0B".b)(jumpPrinter),
+    new ArgOp("bne", "08".b)(jumpPrinter),
+    new ArgOp("bpl", "0A".b)(jumpPrinter),
+    new ArgOp("bra", "05".b)(jumpPrinter),
+    new ArgOp("bvc", "0E".b)(jumpPrinter),
+    new ArgOp("bvs", "0F".b)(jumpPrinter),
     new WordOp("cache", "02".b)(wordPrinter),
     new WordOp("cmode", "4E".b, reqState=AltState1)(wordPrinter),
     new HalfOp("cmp", '6', reqState=AltState3)(regPrinter),
@@ -65,13 +73,13 @@ object Parsing {
     new HalfOp("inc", 'D', _ <= 'E')(regPrinter),
     new RegArg2Op("iwt", 'F')(regImm2Printer),
     new HalfOp("jmp", '9', x => x >= '8' && x <= 'D')(regPrinter),
-    new HalfOp("ldb", '4', _ <= 'B', reqState=AltState1)(regPrinter),
-    new HalfOp("ldw", '4', _ <= 'B')(regPrinter),
+    new HalfOp("ldb", '4', _ <= 'B', reqState=AltState1)(ramPrinter),
+    new HalfOp("ldw", '4', _ <= 'B')(ramPrinter),
     //same as iwt??//new RegArg2Op("lea", 'F')(regImm2Printer),
     new HalfOp("link", '9', x => x >= '1' && x <= '4')(immPrinter),
     new HalfOp("ljmp", '9', x => x >= '8' && x <= 'D', reqState=AltState1)(regPrinter),
-    new RegArg2Op("lm", 'F', reqState=AltState1)(regAdr2Printer),
-    new RegArgOp("lms", 'A', reqState=AltState1)(regImmPrinter),
+    new RegArg2Op("lm", 'F', reqState=AltState1)(load2Printer),
+    new RegArgOp("lms", 'A', reqState=AltState1)(loadPrinter),
     new WordOp("lmult", "9F".b, reqState=AltState1)(wordPrinter),
     new WordOp("lob", "9E".b)(wordPrinter),
     new WordOp("loop", "3C".b)(wordPrinter),
@@ -94,11 +102,11 @@ object Parsing {
     new HalfOp("sbc", '6', reqState=AltState1)(regPrinter),
     new WordOp("sbk", "90".b)(wordPrinter),
     new WordOp("sex", "95".b)(wordPrinter),
-    new RegArg2Op("sm", 'F', reqState=AltState2)(regAdr2Printer),
-    new RegArgOp("sms", 'A', reqState=AltState2)(regAdrPrinter),
-    new HalfOp("stb", '3', _ <= 'B', reqState=AltState1)(regPrinter),
+    new RegArg2Op("sm", 'F', reqState=AltState2)(smPrinter),
+    new RegArgOp("sms", 'A', reqState=AltState2)(smsPrinter),
+    new HalfOp("stb", '3', _ <= 'B', reqState=AltState1)(ramPrinter),
     new WordOp("stop", "00".b)(wordPrinter),
-    new HalfOp("stw", '3', _ <= 'B')(regPrinter),
+    new HalfOp("stw", '3', _ <= 'B')(ramPrinter),
     new HalfOp("sub", '6')(regPrinter),
     new HalfOp("sub", '6', reqState=AltState2)(immPrinter),
     new WordOp("swap", "4D".b)(wordPrinter),
@@ -132,7 +140,7 @@ object Parsing {
           }
         }
         if (rest.length == prevLength) {
-          return Left("Failed to find a parser for bytes starting at " + rest)
+          return Left("Parse error: no instruction matching at " + rest.mkString(" "))
         }
       }
     }

@@ -8,6 +8,7 @@ object OpPrinter {
   def reg(s:String) = "r" + Integer.parseInt(s, 16)
   def imm(s:String) = "#$" + s
   def adr(s:String) = "$" + s
+  def paren(s:String) = "(" + s + ")"
 }
 
 object Printer {
