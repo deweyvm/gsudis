@@ -10,12 +10,18 @@ object Parsing {
       Byte(upper, lower)
     }
   }
+
+  def to2comp(s:String) = {
+    val p = Integer.parseInt(s, 16)
+    ~p + 1
+  }
+
   val immPrinter = Printer() + OpPrinter.imm
   val regPrinter = Printer() + OpPrinter.reg
   val wordPrinter = Printer()
   val adrPrinter = Printer() + OpPrinter.adr
   val ramPrinter = Printer() + (OpPrinter.paren _).compose(OpPrinter.reg)
-  val jumpPrinter = Printer() + {s => (Integer.parseInt(s, 16) - 128).toString }
+  val jumpPrinter = Printer() + {s => to2comp(s).toString }
   val loadPrinter = Printer() + OpPrinter.reg + OpPrinter.paren
   val load2Printer = new OpPrinter {
     override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.paren(parsed.args(2) + parsed.args(1))
