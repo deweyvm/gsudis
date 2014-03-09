@@ -1,15 +1,19 @@
 package com.deweyvm.gsudis
 
-import scala.collection.mutable.ArrayBuffer
 import java.util.Scanner
 import java.io.{File, FileOutputStream, OutputStream}
 
 
 object Main {
+  val fileSymbol = ">"
+  def streamWrite(stream:OutputStream, s:String) {
+    stream.write(s.getBytes("UTF-8"))
+  }
+
   def getStream(raw:String):(String, OutputStream) = {
-    if (raw.contains(">")) {
+    if (raw.contains(fileSymbol)) {
       try {
-        val s = raw.split(">")
+        val s = raw.split(fileSymbol)
         val input = s(0)
         val filename = s(1)
         val file = new File(filename)
@@ -29,23 +33,27 @@ object Main {
     import Parsing._
     val in = new Scanner(System.in)
 
-    //Test.runAll()
-    //exit(0)
+    if (args.contains("-t")) {
+      Test.runAll()
+      exit(0)
+    }
     while (true) {
       try {
-      print("gsudis> ")
-      val next = in.nextLine()
-      val (input, stream) = getStream(next)
-      val hex = input.toUpperCase.split(" ").map{_.b}.toVector
+        print("gsudis> ")
+        val next = in.nextLine()
+        val (input, stream) = getStream(next)
+        val hex = input.toUpperCase.split(" ").map{_.b}.toVector
 
         parse(hex) match {
-          case Left(err) => System.err.println(err)
+          case Left(err) =>
+            System.err.println(err)
+            System.err.flush()
           case Right(res) => res foreach { r =>
             val s = r.toString
-            stream.write(s.getBytes("UTF-8"))
+            streamWrite(stream, s)
 
           }
-          stream.write("\n".getBytes("UTF-8"))
+          streamWrite(stream, "\n")
           stream.flush()
         }
       } catch {

@@ -33,7 +33,7 @@ object Test {
   def testImm(range:Range)(pre:String, exp:String) = {
     range foreach { i:Int =>
       val hex = "%X" format i
-      test(pre + hex, exp + " #$" + hex)
+      test(pre + hex, exp + " #$" + OpPrinter.padLeft(2, hex))
     }
   }
 
@@ -43,7 +43,7 @@ object Test {
         val regHex = "%X" format i
         val imm = "%02X" format k
 
-        test(pre + regHex + " " + imm, "%s r%d,#$%s" format (exp, i,imm) )
+        test(pre + regHex + " " + imm, "%s r%d,#$%s" format (exp, i,OpPrinter.padLeft(2, imm)) )
       }
     }
   }
@@ -65,7 +65,7 @@ object Test {
         val regHex = "%X" format i
         val imm = "%02X" format k
 
-        test(pre + regHex + " " + imm, "%s r%d,$%s" format (exp, i,imm) )
+        test(pre + regHex + " " + imm, "%s r%d,$%s" format (exp, i,OpPrinter.padLeft(2, imm)) )
       }
     }
   }
@@ -133,7 +133,7 @@ object Test {
   def testBranch(op:String, name:String) {
     (0 until 255) foreach { k =>
       val hex = "%02X" format k
-      val output = k - 128
+      val output = Parsing.to2comp(k)
       test(op + " " + hex, name + " " +output)
     }
   }
