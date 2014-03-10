@@ -15,11 +15,15 @@ case class Branch(op:ParsedOp, label:String) extends Code {
   def makeString = "%s %s ; %s" format (op.op, label, op.args(0))
 }
 
+case class InvalidBranch(op:ParsedOp) extends Code {
+  val bytes = op.numBytes
+  def makeString = op.toString
+}
+
 case class Label(name:String) extends Code {
   val bytes = 0
   def makeString = "%s:" format name
 }
-
 
 object Labeler {
   val branches = Vector("bcc", "bcs", "beq", "bge", "blt", "bmi", "bne", "bpl", "bra", "bvc", "bvs")
@@ -50,36 +54,20 @@ case class Labeler(instrs:Vector[ParsedOp]) {
     } else {
       val branch = instrs(branchIndex)
       val op = branch.asInstanceOf[Instruction].op
-      val updated = instrs.updated(branchIndex, Branch(op, labelName))
       val branchAmount = Parsing.to2comp(Integer.parseInt(op.args(0), 16))
       if (branchAmount == 0) {
+        val updated = instrs.updated(branchIndex, InvalidBranch(op))
         processHelper(insert(branchIndex + 1, Label(labelName), updated), prefix, num + 1)
-      } else if (branchAmount > 0) {
-        var byteCount = 0
-        for (k <- (branchIndex + 1) until instrs.length) {
-          if (byteCount == branchAmount) {
-            return processHelper(insert(k, label, updated), prefix, num + 1)
-          }
-          val i = instrs(k)
-          byteCount += i.bytes
+      } else {
+        val k = findPos(instrs, branchIndex, branchAmount)
+        k match {
+          case None =>
+            val updated = instrs.updated(branchIndex, InvalidBranch(op))
+            processHelper(updated, prefix, num + 1)
+          case Some(pos) =>
+            val updated = instrs.updated(branchIndex, Branch(op, labelName))
+            processHelper(insert(pos, Label(labelName), updated), prefix, num + 1)
         }
-        System.err.println("Failed to find branch point")
-        System.err.flush()
-        return Vector()
-      } else/* if (branchAmount < 0)*/ {
-        //val k = findPos(instrs, branchIndex, branchAmount)
-
-        var byteCount = 0
-        for (k <- (0 until (branchIndex + 1)).reverse) {
-          if (byteCount == math.abs(branchAmount)) {
-            return processHelper(insert(k + 1, label, updated), prefix, num + 1)
-          }
-          val i = instrs(k)
-          byteCount += i.bytes
-        }
-        System.err.println("Failed to find branch point")
-        System.err.flush()
-        return Vector()
       }
 
     }
