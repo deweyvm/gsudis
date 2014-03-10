@@ -46,31 +46,37 @@ object Main {
     }
 
     breakable { while (true) {
-      try {
-        print("gsudis> ")
-        val next = in.nextLine()
-        val (input, stream) = getStream(next)
-        val hex = input.toUpperCase.split(" ").map{_.b}.toVector
+      print("gsudis> ")
+      val next = in.nextLine()
+      if (next.replace(" ", "").length == 0) {
+        //no input, do nothing
+      } else {
+        try {
+          val (input, stream) = getStream(next)
+          val hex = input.toUpperCase.split(" ").map{_.b}.toVector
 
-        parse(hex) match {
-          case Left(err) =>
-            writeErr(err)
-          case Right(res) =>
-            val labeled = Labeler(res).process
-            labeled foreach { r =>
-              val s = r.makeString + "\r\n"
-              streamWrite(stream, s)
-            }
-            stream.flush()
+          parse(hex) match {
+            case Left(err) =>
+              writeErr(err)
+            case Right(res) =>
+              val labeled = Labeler(res).process
+              labeled foreach { r =>
+                val s = r.makeString + "\r\n"
+                streamWrite(stream, s)
+              }
+              stream.flush()
+          }
+        } catch {
+          case nse:NoSuchElementException =>
+            writeErr("End of input.")
+            writeErr(nse)
+            break()
+          case s:Exception =>
+            writeErr(s)
         }
-      } catch {
-        case nse:NoSuchElementException =>
-          writeErr("End of input.")
-          writeErr(nse)
-          break()
-        case s:Exception =>
-          writeErr(s)
+
       }
+
     }}
   }
 }

@@ -12,7 +12,8 @@ object Parsing {
   }
 
   def to2comp(p:Int) = {
-    ~p + 1
+    //~p + 1
+    p.toByte
   }
 
   val immPrinter = Printer() + OpPrinter.imm

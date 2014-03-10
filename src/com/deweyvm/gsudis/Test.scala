@@ -131,7 +131,7 @@ object Test {
   def testImm16 = testImm(0 until 16) _
 
   def testBranch(op:String, name:String) {
-    (0 until 255) foreach { k =>
+    (0 until 256) foreach { k =>
       val hex = "%02X" format k
       val output = Parsing.to2comp(k)
       test(op + " " + hex, name + " " +output)
@@ -158,6 +158,7 @@ object Test {
     testImm(1 until 16)("3F 7", "bic")
     testBranch("06", "blt")
     testBranch("0B", "bmi")
+    return
     testBranch("08", "bne")
     testBranch("0A", "bpl")
     testBranch("05", "bra")
