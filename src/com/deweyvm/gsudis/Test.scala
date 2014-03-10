@@ -5,7 +5,7 @@ object Test {
   def test(input:String, expected:String) {
     import Parsing._
     val hex = input.split(" ").map{_.b}.toVector
-    val parsed: Either[String, Vector[ParseResult]] = parse(hex)
+    val parsed: Either[String, Vector[ParsedOp]] = parse(hex)
     tests += 1
     parsed match {
       case Right(rest :+ x) =>

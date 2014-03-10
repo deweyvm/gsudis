@@ -23,17 +23,17 @@ object Parsing {
   val jumpPrinter = Printer() + {s => to2comp(Integer.parseInt(s, 16)).toString }
   val loadPrinter = Printer() + OpPrinter.reg + OpPrinter.paren
   val load2Printer = new OpPrinter {
-    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.paren(parsed.args(2) + parsed.args(1))
+    override def print(parsed: ParsedOp): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.paren(parsed.args(2) + parsed.args(1))
   }
   val regImmPrinter = Printer() + OpPrinter.reg + OpPrinter.imm
   val regImm2Printer = new OpPrinter {
-    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.imm4(parsed.args(2), parsed.args(1))
+    override def print(parsed: ParsedOp): String = parsed.op + " " + OpPrinter.reg(parsed.args(0)) + "," + OpPrinter.imm4(parsed.args(2), parsed.args(1))
   }
   val smsPrinter = new OpPrinter {
-    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.paren(parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
+    override def print(parsed: ParsedOp): String = parsed.op + " " + OpPrinter.paren(parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
   }
   val smPrinter = new OpPrinter {
-    override def print(parsed: ParseResult): String = parsed.op + " " + OpPrinter.paren(parsed.args(2) + parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
+    override def print(parsed: ParsedOp): String = parsed.op + " " + OpPrinter.paren(parsed.args(2) + parsed.args(1)) + "," + OpPrinter.reg(parsed.args(0))
   }
   val movePrinter = Printer() + OpPrinter.reg + OpPrinter.reg
   val All:Vector[OpParser with OpPrinter] = Vector(
@@ -125,10 +125,10 @@ object Parsing {
      o1.reqState.value > o2.reqState.value
   }
 
-  def parse(hex:Vector[Byte]):Either[String, Vector[ParseResult]] = {
+  def parse(hex:Vector[Byte]):Either[String, Vector[ParsedOp]] = {
     var state:AltState = AltNone
     var rest = hex
-    val result = ArrayBuffer[ParseResult]()
+    val result = ArrayBuffer[ParsedOp]()
     while (rest.length > 0) {
       import scala.util.control.Breaks._
       breakable {

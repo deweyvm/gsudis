@@ -2,7 +2,7 @@ package com.deweyvm.gsudis
 
 import java.util.Scanner
 import java.io.{File, FileOutputStream, OutputStream}
-
+import scala.util.control.Breaks._
 
 object Main {
   val fileSymbol = ">"
@@ -29,6 +29,13 @@ object Main {
       (raw, System.out)
     }
   }
+
+  def writeErr(s:Any) {
+    System.err.println(s)
+    System.err.flush()
+  }
+
+
   def main(args:Array[String]) {
     import Parsing._
     val in = new Scanner(System.in)
@@ -37,7 +44,8 @@ object Main {
       Test.runAll()
       exit(0)
     }
-    while (true) {
+
+    breakable { while (true) {
       try {
         print("gsudis> ")
         val next = in.nextLine()
@@ -46,21 +54,23 @@ object Main {
 
         parse(hex) match {
           case Left(err) =>
-            System.err.println(err)
-            System.err.flush()
-          case Right(res) => res foreach { r =>
-            val s = r.toString
-            streamWrite(stream, s)
-
-          }
-          streamWrite(stream, "\n")
-          stream.flush()
+            writeErr(err)
+          case Right(res) =>
+            val labeled = Labeler(res).process
+            labeled foreach { r =>
+              val s = r.makeString + "\r\n"
+              streamWrite(stream, s)
+            }
+            stream.flush()
         }
       } catch {
+        case nse:NoSuchElementException =>
+          writeErr("End of input.")
+          writeErr(nse)
+          break()
         case s:Exception =>
-          System.err.println(s)
-          System.err.flush()
+          writeErr(s)
       }
-    }
+    }}
   }
 }
