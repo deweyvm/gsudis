@@ -80,7 +80,7 @@ object Main {
   def main(args:Array[String]) {
     if (args.contains("-t")) {
       Test.runAll()
-      exit(0)
+      System.exit(0)
     }
 
     run(!args.contains("-stdin"))
