@@ -1,5 +1,8 @@
 package com.deweyvm.gsudis
 
+/**
+ * Test every possible instruction combination
+ */
 object Test {
   var tests = 0
   def test(input:String, expected:String) {

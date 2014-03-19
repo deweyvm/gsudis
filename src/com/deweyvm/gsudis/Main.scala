@@ -35,18 +35,14 @@ object Main {
     System.err.flush()
   }
 
-
-  def main(args:Array[String]) {
+  def run(interactive:Boolean) {
     import Parsing._
     val in = new Scanner(System.in)
 
-    if (args.contains("-t")) {
-      Test.runAll()
-      exit(0)
-    }
-
-    breakable { while (true) {
-      print("gsudis> ")
+    breakable { do {
+      if (interactive){
+        print("gsudis> ")
+      }
       val next = in.nextLine()
       if (next.replace(" ", "").length == 0) {
         //no input, do nothing
@@ -61,7 +57,7 @@ object Main {
             case Right(res) =>
               val labeled = Labeler(res).process
               labeled foreach { r =>
-                val s = r.makeString + "\r\n"
+                val s = r.makeString + System.lineSeparator()
                 streamWrite(stream, s)
               }
               stream.flush()
@@ -77,6 +73,21 @@ object Main {
 
       }
 
-    }}
+    } while (interactive) }
+  }
+
+
+  def main(args:Array[String]) {
+
+    if (args.contains("-t")) {
+      Test.runAll()
+      exit(0)
+    }
+
+    run(!args.contains("-stdin"))
+
+
+
+
   }
 }

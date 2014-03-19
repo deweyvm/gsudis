@@ -12,7 +12,6 @@ object Parsing {
   }
 
   def to2comp(p:Int) = {
-    //~p + 1
     p.toByte
   }
 
@@ -81,7 +80,6 @@ object Parsing {
     new HalfOp("jmp", '9', x => x >= '8' && x <= 'D')(regPrinter),
     new HalfOp("ldb", '4', _ <= 'B', reqState=AltState1)(ramPrinter),
     new HalfOp("ldw", '4', _ <= 'B')(ramPrinter),
-    //same as iwt??//new RegArg2Op("lea", 'F')(regImm2Printer),
     new HalfOp("link", '9', x => x >= '1' && x <= '4')(immPrinter),
     new HalfOp("ljmp", '9', x => x >= '8' && x <= 'D', reqState=AltState1)(regPrinter),
     new RegArg2Op("lm", 'F', reqState=AltState1)(load2Printer),
